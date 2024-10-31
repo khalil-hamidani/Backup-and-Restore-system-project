@@ -1,0 +1,20 @@
+1) Full Backup
+
+Copies ALL selected files/data
+Most storage space & longest time
+Fastest restore
+Example: Complete copy of your Documents folder
+
+2) Differential Backup
+
+Backs up changes since last FULL backup
+Medium storage & medium speed
+Medium restore speed (needs only full + latest differential)
+Example: All changes since last Sunday's full backup
+
+Incremental Backup
+
+Only backs up changes since last backup (any type)
+Least storage & fastest backup
+Slower restore (needs all previous backups)
+Example: Only new/modified files since yesterday
