@@ -181,13 +181,18 @@ class BackupSystem:
         """Perform an incremental backup with progress tracking."""
         manifest = self._load_manifest()
 
-        # Reference the latest backup (could be full or incremental)
+        # Check for any previous backup
         if not manifest['backups']:
             progress.update(task, description="[bold red]No backup found. Incremental backup skipped.")
             return None, 0
 
+        # Get complete file state from all previous backups
+        all_files = {}
+        for backup in manifest['backups']:
+            all_files.update(backup['files'])
+
+        # Get the most recent backup of any type
         last_backup = manifest['backups'][-1]
-        last_files = last_backup['files']
         new_files = {}
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -210,8 +215,8 @@ class BackupSystem:
                     current_hash = self._calculate_file_hash(src_file)
                     files_processed += 1
 
-                    # Backup if the file is new or modified since the last backup
-                    if rel_path not in last_files or last_files[rel_path] != current_hash:
+                    # Only backup if file is new or modified compared to ALL previous backups
+                    if rel_path not in all_files or all_files[rel_path] != current_hash:
                         dest_file = backup_path / rel_path
                         dest_file.parent.mkdir(parents=True, exist_ok=True)
                         progress.update(task, description=f"[cyan]Backing up: {rel_path}")
@@ -222,7 +227,6 @@ class BackupSystem:
 
                     progress.update(task, advance=1)
 
-            # If any files were backed up, save incremental backup info
             if new_files:
                 backup_info = {
                     'type': 'incremental',
@@ -237,7 +241,6 @@ class BackupSystem:
                 progress.update(task, description=f"[bold green]Backup completed! {files_backed_up} files updated")
                 return backup_path, files_backed_up
             else:
-                # No changes detected, cleanup created directory
                 progress.update(task, description="[bold yellow]No changes detected, backup skipped")
                 shutil.rmtree(backup_path)
                 return None, 0
@@ -247,6 +250,13 @@ class BackupSystem:
             self.logger.error(f"Backup failed: {str(e)}")
             shutil.rmtree(backup_path, ignore_errors=True)
             raise
+
+
+
+
+
+
+
 
     def differential_backup(self, progress, task):
         """Perform a differential backup with progress tracking"""
@@ -402,7 +412,7 @@ def display_menu():
     
     console.print(Panel(
         Align.center(table),
-        title="[bold cyan]Secure Backup System v1.0[/bold cyan]",
+        title="[bold cyan]Secure Backup System v1.5[/bold cyan]",
         subtitle="[italic]Select an option below[/italic]",
         border_style="cyan",
         width=80
@@ -447,7 +457,7 @@ def main():
             time.sleep(0.5)
         
         def wait_for_user():
-            console.print("[bold blue]Press enter key to continue...[/bold blue]")
+            console.print("[bold blue]Press enter to continue...[/bold blue]")
             console.input()
         
         while True:
